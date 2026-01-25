@@ -9,3 +9,7 @@ AVD-AWS-0028
 
 # EBS encryption - encryption is enabled by default via ebs_block_device settings
 AVD-AWS-0131
+
+# Unrestricted egress - dev workstation requires outbound internet access for
+# package management (apt, npm, pip), docker pulls, git operations, etc.
+AVD-AWS-0104
