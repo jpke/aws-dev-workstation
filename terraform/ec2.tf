@@ -236,9 +236,9 @@ EOF
 resource "aws_launch_template" "workstation" {
   name = "${var.name}-lt"
 
-  image_id      = local.ami_id
-  key_name      = local.effective_key_name
-  user_data     = base64encode(local.user_data)
+  image_id  = local.ami_id
+  key_name  = local.effective_key_name
+  user_data = base64encode(local.user_data)
 
   iam_instance_profile {
     name = var.create_instance_profile ? aws_iam_instance_profile.workstation[0].name : null

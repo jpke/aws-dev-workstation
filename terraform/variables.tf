@@ -185,11 +185,11 @@ variable "spot_instance_types" {
   description = "List of instance types for spot fleet (all must be x86_64). First type is preferred."
   type        = list(string)
   default = [
-    "m7i.xlarge",  # Primary: 4 vCPU, 16GB - latest gen Intel general purpose
-    "m7a.xlarge",  # Fallback: 4 vCPU, 16GB - latest gen AMD general purpose
-    "m6i.xlarge",  # Fallback: 4 vCPU, 16GB - previous gen Intel
-    "m6a.xlarge",  # Fallback: 4 vCPU, 16GB - previous gen AMD
-    "c7i.xlarge",  # Fallback: 4 vCPU, 8GB - compute optimized (less RAM but good for builds)
+    "m7i.xlarge", # Primary: 4 vCPU, 16GB - latest gen Intel general purpose
+    "m7a.xlarge", # Fallback: 4 vCPU, 16GB - latest gen AMD general purpose
+    "m6i.xlarge", # Fallback: 4 vCPU, 16GB - previous gen Intel
+    "m6a.xlarge", # Fallback: 4 vCPU, 16GB - previous gen AMD
+    "c7i.xlarge", # Fallback: 4 vCPU, 8GB - compute optimized (less RAM but good for builds)
   ]
 }
 

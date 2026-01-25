@@ -1,0 +1,35 @@
+# Gitleaks configuration
+# https://github.com/gitleaks/gitleaks
+
+title = "Terraform AWS Dev Workstation Gitleaks Config"
+
+[extend]
+useDefault = true
+
+# Allowlist known safe patterns
+[allowlist]
+description = "Allowlisted patterns"
+
+# Canonical's public AWS account ID for Ubuntu AMIs
+# This is publicly documented: https://ubuntu.com/server/docs/cloud-images/amazon-ec2
+regexes = [
+  '''099720109477''',
+]
+
+# AWS NICE DCV official CloudFront distribution
+paths = [
+  '''\.gitleaks\.toml$''',
+]
+
+# Additional regex patterns to ignore
+[[rules]]
+id = "canonical-account-id"
+description = "Canonical's public AWS account ID for Ubuntu AMIs"
+regex = '''099720109477'''
+allowlist = { regexes = ['''099720109477'''] }
+
+[[rules]]
+id = "aws-nice-dcv-cloudfront"
+description = "AWS official NICE DCV download distribution"
+regex = '''d1uj6qtbmh3dt5\.cloudfront\.net'''
+allowlist = { regexes = ['''d1uj6qtbmh3dt5\.cloudfront\.net'''] }

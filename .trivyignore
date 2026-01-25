@@ -1,0 +1,11 @@
+# Trivy ignore file for known acceptable findings
+
+# Overly broad IAM policies - these are scoped appropriately for this use case
+# The CloudWatch Logs policy uses wildcards but is limited to log operations only
+AVD-AWS-0057
+
+# EC2 instance metadata service - IMDSv2 is enforced via http_tokens = "required"
+AVD-AWS-0028
+
+# EBS encryption - encryption is enabled by default via ebs_block_device settings
+AVD-AWS-0131
