@@ -160,6 +160,22 @@ aws ec2 describe-instances --instance-ids <instance-id> \
   --query 'Reservations[0].Instances[0].PublicIpAddress' --output text
 ```
 
+### Elastic IP (Optional)
+
+By default, `create_eip` is set to `false`. This means the instance's public IP address will change each time it's stopped and started.
+
+**When you don't need an Elastic IP:**
+- You're okay fetching the new IP after each restart (see command above)
+- You don't need a static IP for firewall rules or DNS records
+- You want to save ~$3.60/month
+
+**When you might want an Elastic IP:**
+- You need a stable IP for external firewall allowlists
+- You're pointing a DNS record at the instance
+- You want to avoid looking up the IP after each restart
+
+To enable, set `create_eip = true` in your configuration. Note that the security group CIDR rules for your local IP don't need updating when the instance IP changes—those control inbound access based on *your* IP, not the instance's.
+
 ## Configuration Options
 
 | Variable | Description | Default |
@@ -167,6 +183,7 @@ aws ec2 describe-instances --instance-ids <instance-id> \
 | `instance_type` | EC2 instance type | `m7i.xlarge` |
 | `root_volume_size` | EBS volume size in GB | `100` |
 | `use_spot_instance` | Use spot pricing | `false` |
+| `create_eip` | Create Elastic IP for static address | `false` |
 | `enable_auto_stop` | Enable auto-stop Lambda | `false` |
 | `notify_after_hours` | Hours before warning notification | `5` |
 | `stop_after_hours` | Hours before auto-stop | `8` |
