@@ -8,8 +8,8 @@ A Terraform module for deploying a sandboxed EC2 development environment with NI
 flowchart TB
     subgraph AWS["AWS Cloud"]
         subgraph VPC["VPC"]
-            EC2["EC2 Instance<br/>(Spot or On-Demand)"]
             SG["Security Group<br/>SSH + DCV + Web Ports"]
+            EC2["EC2 Instance<br/>(Spot or On-Demand)"]
         end
 
         subgraph AutoStop["Auto-Stop System"]
@@ -21,8 +21,8 @@ flowchart TB
         IAM["IAM Role<br/>+ Instance Profile"]
     end
 
-    User["Developer"] -->|"SSH / DCV / SSM"| EC2
-    EC2 --> SG
+    User["Developer"] -->|"SSH / DCV / SSM"| SG
+    SG --> EC2
     EC2 --> IAM
     EB -->|"Hourly Check"| Lambda
     Lambda -->|"Stop after N hours"| EC2
