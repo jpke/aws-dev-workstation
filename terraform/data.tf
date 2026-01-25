@@ -2,6 +2,7 @@
 # Lookups for VPC, subnet, and AMI when not explicitly provided
 
 data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
 
 # Get the default VPC if not specified
 data "aws_vpc" "default" {

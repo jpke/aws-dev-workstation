@@ -44,7 +44,7 @@ resource "aws_iam_role_policy" "dcv_license" {
         Action = [
           "s3:GetObject"
         ]
-        Resource = "arn:aws:s3:::dcv-license.${data.aws_region.current.name}/*"
+        Resource = "arn:aws:s3:::dcv-license.${data.aws_region.current.id}/*"
       }
     ]
   })
