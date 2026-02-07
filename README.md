@@ -1,4 +1,4 @@
-# Terraform AWS Dev Workstation
+# AWS Dev Workstation
 
 A Terraform module for deploying an EC2 development environment with NICE DCV remote desktop — a dedicated Linux box in the cloud for running AI coding agents like [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and [OpenClaw](https://github.com/anthropics/openclaw) without tying up your personal machine.
 

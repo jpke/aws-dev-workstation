@@ -39,5 +39,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`NOTIFY_AFTER_HOURS` Lambda environment variable** and associated warning notification logic.
 - **`AutoStopNotified` tag handling**: No longer needed since there is no separate warning step.
 
-[Unreleased]: https://github.com/jpke/terraform-aws-dev-workstation/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/jpke/terraform-aws-dev-workstation/releases/tag/v1.0.0
+[Unreleased]: https://github.com/jpke/aws-dev-workstation/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/jpke/aws-dev-workstation/releases/tag/v1.0.0
