@@ -2,9 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.0.0] - 2026-02-07
 
 ### Added
 
@@ -35,3 +38,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`notify_after_hours` variable**: Warning notifications removed. The Lambda now only notifies when it actually stops an instance (fail-safe trigger).
 - **`NOTIFY_AFTER_HOURS` Lambda environment variable** and associated warning notification logic.
 - **`AutoStopNotified` tag handling**: No longer needed since there is no separate warning step.
+
+[Unreleased]: https://github.com/jpke/terraform-aws-dev-workstation/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/jpke/terraform-aws-dev-workstation/releases/tag/v1.0.0
