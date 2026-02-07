@@ -35,11 +35,23 @@ resource "aws_security_group" "workstation" {
     }
   }
 
-  # NICE DCV access (HTTPS port 8443)
+  # NICE DCV access on standard HTTPS port (uses iptables redirect 443 -> 8443 inside instance)
   dynamic "ingress" {
-    for_each = length(var.allowed_dcv_cidrs) > 0 ? [1] : []
+    for_each = length(var.allowed_dcv_cidrs) > 0 && var.enable_dcv_port_443 ? [1] : []
     content {
-      description = "NICE DCV access"
+      description = "NICE DCV on HTTPS (443)"
+      from_port   = 443
+      to_port     = 443
+      protocol    = "tcp"
+      cidr_blocks = var.allowed_dcv_cidrs
+    }
+  }
+
+  # NICE DCV direct access (port 8443) - only if not using 443 redirect
+  dynamic "ingress" {
+    for_each = length(var.allowed_dcv_cidrs) > 0 && !var.enable_dcv_port_443 ? [1] : []
+    content {
+      description = "NICE DCV direct access"
       from_port   = 8443
       to_port     = 8443
       protocol    = "tcp"
@@ -200,6 +212,26 @@ systemctl start dcvserver || true
 # Create a virtual session for the ubuntu user
 dcv create-session --type=virtual --owner ubuntu --storage-root /home/ubuntu dev-session || true
 
+# Systemd service to auto-create virtual session on every boot
+# (DCV only supports auto-creating console sessions, not virtual ones)
+cat > /etc/systemd/system/dcv-virtual-session.service <<DCVSERVICE
+[Unit]
+Description=Create DCV virtual session
+After=dcvserver.service
+Requires=dcvserver.service
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/sleep 5
+ExecStart=/usr/bin/dcv create-session --type=virtual --owner ubuntu --storage-root /home/ubuntu dev-session
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+DCVSERVICE
+systemctl daemon-reload
+systemctl enable dcv-virtual-session
+
 # Set password for ubuntu user (for DCV authentication)
 # IMPORTANT: Change this password after first login!
 echo "ubuntu:CHANGE_ME_IMMEDIATELY" | chpasswd
@@ -220,6 +252,58 @@ echo "Installing development tools..."
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
     python3-pip \
     python3-venv
+
+%{if var.install_tailscale && var.tailscale_auth_key != null}
+echo "Installing Tailscale..."
+curl -fsSL https://tailscale.com/install.sh | sh
+tailscale up --authkey=${var.tailscale_auth_key} --ssh
+
+# Provision Tailscale TLS cert for DCV (requires HTTPS certs enabled in Tailscale admin)
+# DCV overwrites its cert on restart, so a systemd service re-provisions on each boot
+%{if var.install_dcv}
+cat > /usr/local/bin/dcv-tailscale-cert.sh <<"CERTSCRIPT"
+#!/bin/bash
+set -e
+FQDN=$(tailscale status --json | python3 -c "import sys,json; print(json.load(sys.stdin)[\"Self\"][\"DNSName\"].rstrip(\".\"))")
+DCV_CERT_DIR=/var/lib/dcv/.config/NICE/dcv/private
+tailscale cert --cert-file "$DCV_CERT_DIR/dcv.pem" --key-file "$DCV_CERT_DIR/dcv.key" "$FQDN"
+chown dcv:dcv "$DCV_CERT_DIR/dcv.pem" "$DCV_CERT_DIR/dcv.key"
+chmod 600 "$DCV_CERT_DIR/dcv.key"
+systemctl restart dcvserver
+echo "DCV TLS cert provisioned for $FQDN"
+CERTSCRIPT
+chmod +x /usr/local/bin/dcv-tailscale-cert.sh
+
+cat > /etc/systemd/system/dcv-tailscale-cert.service <<CERTSERVICE
+[Unit]
+Description=Provision Tailscale TLS cert for DCV
+After=tailscaled.service dcvserver.service
+Requires=tailscaled.service
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/sleep 10
+ExecStart=/usr/local/bin/dcv-tailscale-cert.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+CERTSERVICE
+systemctl daemon-reload
+systemctl enable dcv-tailscale-cert
+
+# Also provision cert now during cloud-init
+/usr/local/bin/dcv-tailscale-cert.sh || true
+%{endif}
+%{endif}
+
+# Port 443 -> 8443 redirect for DCV (Tailscale traffic bypasses SG, so iptables handles it)
+%{if var.install_dcv && var.enable_dcv_port_443}
+iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 8443
+# Persist iptables rules across reboots
+DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent
+netfilter-persistent save
+%{endif}
 
 # Clean up
 apt-get autoremove -y

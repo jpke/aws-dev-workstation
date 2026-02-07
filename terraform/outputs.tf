@@ -87,7 +87,7 @@ output "connection_info" {
     dcv_url      = var.install_dcv && local.instance_public_ip != null ? "https://${var.create_eip ? aws_eip.workstation[0].public_ip : local.instance_public_ip}:8443" : null
     ssh          = local.effective_key_name != null && local.instance_public_ip != null ? "ssh -i ~/.ssh/${local.effective_key_name}.pem ubuntu@${var.create_eip ? aws_eip.workstation[0].public_ip : local.instance_public_ip}" : "Use SSM Session Manager"
     ssm          = local.instance_id != null ? "aws ssm start-session --target ${local.instance_id}" : null
-    notes        = var.install_dcv ? "Default DCV session: dev-session, username: ubuntu. Change the default password!" : null
+    notes        = var.install_dcv ? "Default DCV session: dev-session, username: ubuntu, password: CHANGE_ME_IMMEDIATELY (CHANGE THIS!)" : null
     save_ssh_key = var.create_key_pair ? "Run: terragrunt output -raw private_key_pem > ~/.ssh/${local.effective_key_name}.pem && chmod 600 ~/.ssh/${local.effective_key_name}.pem" : null
   }
 }
@@ -116,11 +116,10 @@ output "auto_stop_enabled" {
 output "auto_stop_info" {
   description = "Auto-stop configuration"
   value = var.enable_auto_stop ? {
-    notify_after_hours = var.notify_after_hours
-    stop_after_hours   = var.stop_after_hours
-    check_interval     = "${var.auto_stop_check_interval} minutes"
-    ntfy_topic         = var.notification_topic
-    lambda_arn         = aws_lambda_function.auto_stop[0].arn
+    stop_after_hours = var.stop_after_hours
+    check_interval   = "${var.auto_stop_check_interval} minutes"
+    ntfy_topic       = var.notification_topic
+    lambda_arn       = aws_lambda_function.auto_stop[0].arn
   } : null
 }
 
@@ -132,4 +131,30 @@ output "instance_commands" {
     defer_autostop = local.instance_id != null ? "aws ec2 create-tags --resources ${local.instance_id} --tags Key=AutoStopDeferHours,Value=2" : null
     reset_timer    = local.instance_id != null ? "# Stop then start to reset the auto-stop timer completely" : null
   }
+}
+
+# Scheduled Start/Stop Outputs
+output "schedule_info" {
+  description = "Scheduled start/stop configuration"
+  value = var.enable_scheduled_start ? {
+    start_schedules = var.schedule_start_expressions
+    stop_schedules  = var.schedule_stop_expressions
+    timezone        = var.schedule_timezone
+  } : null
+}
+
+# Task Queue Outputs
+output "task_queue_url" {
+  description = "URL of the SQS task queue"
+  value       = var.enable_task_queue ? aws_sqs_queue.task_queue[0].url : null
+}
+
+output "task_queue_arn" {
+  description = "ARN of the SQS task queue"
+  value       = var.enable_task_queue ? aws_sqs_queue.task_queue[0].arn : null
+}
+
+output "send_task_command" {
+  description = "CLI command to send a task to the workstation queue"
+  value       = var.enable_task_queue ? "aws sqs send-message --queue-url ${aws_sqs_queue.task_queue[0].url} --message-body 'YOUR_TASK_HERE'" : null
 }

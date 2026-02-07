@@ -72,7 +72,7 @@ inputs = {
   # ============================================================================
 
   name          = "dev-workstation"
-  instance_type = "m7i.xlarge"  # x86_64 Intel - 4 vCPU, 16GB RAM
+  instance_type = "m7i-flex.large"  # x86_64 Intel Flex - 2 vCPU, 8GB RAM
   environment   = "development"
 
   # Storage Configuration
@@ -108,6 +108,20 @@ inputs = {
   install_nodejs  = true   # Node.js LTS + pnpm + yarn
 
   # ============================================================================
+  # Tailscale (zero-trust network access)
+  # ============================================================================
+
+  # Tailscale provides SSH, DCV, and all ports over a private WireGuard mesh.
+  # When enabled with DCV, it auto-provisions TLS certs (no browser warnings).
+  # Generate an auth key at: https://login.tailscale.com/admin/settings/keys
+
+  install_tailscale  = false
+  # tailscale_auth_key = "tskey-auth-XXXX"  # Sensitive - use SOPS or env vars
+
+  # Enable port 443 redirect for DCV (useful with Tailscale where traffic bypasses SGs)
+  enable_dcv_port_443 = false
+
+  # ============================================================================
   # IAM Configuration
   # ============================================================================
 
@@ -128,17 +142,50 @@ inputs = {
   spot_interruption_behavior = "stop"
 
   # ============================================================================
-  # Auto-Stop Configuration (prevents runaway costs)
+  # Scheduled Start/Stop (EventBridge Scheduler)
   # ============================================================================
 
+  # Automatically start and stop the instance on a schedule.
+  # Uses EventBridge Scheduler with native IANA timezone support.
+
+  enable_scheduled_start = false
+  schedule_timezone      = "America/New_York"
+
+  # Example: 3 work windows per day, 3 hours each
+  # schedule_start_expressions = [
+  #   "cron(0 7 ? * MON-FRI *)",   # 7:00 AM ET weekdays
+  #   "cron(0 12 ? * MON-FRI *)",  # 12:00 PM ET weekdays
+  #   "cron(0 17 ? * MON-FRI *)",  # 5:00 PM ET weekdays
+  # ]
+  # schedule_stop_expressions = [
+  #   "cron(0 10 ? * MON-FRI *)",  # 10:00 AM ET weekdays
+  #   "cron(0 15 ? * MON-FRI *)",  # 3:00 PM ET weekdays
+  #   "cron(0 20 ? * MON-FRI *)",  # 8:00 PM ET weekdays
+  # ]
+
+  # ============================================================================
+  # Auto-Stop Fail-Safe (prevents runaway costs)
+  # ============================================================================
+
+  # Safety net: stops instance if it runs longer than expected.
+  # Works as a fail-safe in case scheduled stops fail or manual starts are forgotten.
+
   enable_auto_stop         = true
-  notify_after_hours       = 5     # Send notification at 5 hours
-  stop_after_hours         = 6     # Auto-stop at 6 hours
+  stop_after_hours         = 4     # Fail-safe stop at 4 hours
   auto_stop_check_interval = 60    # Check every hour
 
   # Optional: ntfy.sh topic for push notifications
   # Sign up at https://ntfy.sh/ and create a topic
   # notification_topic = "your-ntfy-topic"
+
+  # ============================================================================
+  # SQS Task Queue
+  # ============================================================================
+
+  # Queue tasks for the workstation even when the instance is off.
+  # Messages persist for 14 days. The instance consumes them on startup.
+
+  enable_task_queue = false
 
   # ============================================================================
   # Tags

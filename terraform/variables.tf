@@ -185,11 +185,11 @@ variable "spot_instance_types" {
   description = "List of instance types for spot fleet (all must be x86_64). First type is preferred."
   type        = list(string)
   default = [
-    "m7i.xlarge", # Primary: 4 vCPU, 16GB - latest gen Intel general purpose
-    "m7a.xlarge", # Fallback: 4 vCPU, 16GB - latest gen AMD general purpose
-    "m6i.xlarge", # Fallback: 4 vCPU, 16GB - previous gen Intel
-    "m6a.xlarge", # Fallback: 4 vCPU, 16GB - previous gen AMD
-    "c7i.xlarge", # Fallback: 4 vCPU, 8GB - compute optimized (less RAM but good for builds)
+    "m7i-flex.large", # Primary: 2 vCPU, 8GB - Intel Flex (best value)
+    "m7i.large",      # Fallback: 2 vCPU, 8GB - Intel general purpose
+    "m7a.large",      # Fallback: 2 vCPU, 8GB - AMD general purpose
+    "m6i.large",      # Fallback: 2 vCPU, 8GB - previous gen Intel
+    "m6a.large",      # Fallback: 2 vCPU, 8GB - previous gen AMD
   ]
 }
 
@@ -215,23 +215,17 @@ variable "spot_interruption_behavior" {
   }
 }
 
-# Auto-Stop Configuration
+# Auto-Stop Fail-Safe Configuration
 variable "enable_auto_stop" {
-  description = "Whether to enable automatic instance stopping and notifications"
+  description = "Whether to enable the fail-safe Lambda that stops instances running too long (safety net for scheduled stop failures)"
   type        = bool
   default     = false
 }
 
-variable "notify_after_hours" {
-  description = "Send notification after instance has been running this many hours"
-  type        = number
-  default     = 5
-}
-
 variable "stop_after_hours" {
-  description = "Automatically stop instance after it has been running this many hours"
+  description = "Fail-safe: automatically stop instance after it has been running this many hours"
   type        = number
-  default     = 8
+  default     = 4
 }
 
 variable "notification_topic" {
@@ -243,7 +237,60 @@ variable "notification_topic" {
 variable "auto_stop_check_interval" {
   description = "How often (in minutes) to check instance runtime"
   type        = number
-  default     = 15
+  default     = 60
+}
+
+# Scheduled Start/Stop Configuration
+variable "enable_scheduled_start" {
+  description = "Whether to enable scheduled instance start/stop via EventBridge Scheduler"
+  type        = bool
+  default     = false
+}
+
+variable "schedule_start_expressions" {
+  description = "List of cron expressions for starting the instance (EventBridge Scheduler cron format). Example: cron(0 12 ? * MON-FRI *) = noon weekdays"
+  type        = list(string)
+  default     = []
+}
+
+variable "schedule_stop_expressions" {
+  description = "List of cron expressions for stopping the instance. Should correspond to start expressions."
+  type        = list(string)
+  default     = []
+}
+
+variable "schedule_timezone" {
+  description = "IANA timezone for schedule expressions (e.g., America/New_York)"
+  type        = string
+  default     = "America/New_York"
+}
+
+# Tailscale Configuration
+variable "install_tailscale" {
+  description = "Whether to install Tailscale for zero-trust network access"
+  type        = bool
+  default     = false
+}
+
+variable "tailscale_auth_key" {
+  description = "Tailscale auth key for automatic enrollment. Generate at https://login.tailscale.com/admin/settings/keys"
+  type        = string
+  default     = null
+  sensitive   = true
+}
+
+# DCV Port 443 Configuration
+variable "enable_dcv_port_443" {
+  description = "Enable port 443 for DCV (redirects to 8443 via iptables). Useful with Tailscale where traffic bypasses security groups."
+  type        = bool
+  default     = false
+}
+
+# Task Queue Configuration
+variable "enable_task_queue" {
+  description = "Whether to create an SQS queue for queueing tasks to the workstation"
+  type        = bool
+  default     = false
 }
 
 # Tags

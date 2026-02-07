@@ -44,7 +44,7 @@ resource "aws_iam_role_policy" "dcv_license" {
         Action = [
           "s3:GetObject"
         ]
-        Resource = "arn:aws:s3:::dcv-license.${data.aws_region.current.id}/*"
+        Resource = "arn:aws:s3:::dcv-license.${data.aws_region.current.name}/*"
       }
     ]
   })
@@ -55,6 +55,29 @@ resource "aws_iam_role_policy_attachment" "additional" {
   count      = var.create_instance_profile ? length(var.additional_iam_policies) : 0
   role       = aws_iam_role.workstation[0].name
   policy_arn = var.additional_iam_policies[count.index]
+}
+
+# SQS task queue consumer policy
+resource "aws_iam_role_policy" "task_queue_consumer" {
+  count = var.create_instance_profile && var.enable_task_queue ? 1 : 0
+  name  = "${var.name}-task-queue-consumer"
+  role  = aws_iam_role.workstation[0].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes",
+          "sqs:GetQueueUrl"
+        ]
+        Resource = aws_sqs_queue.task_queue[0].arn
+      }
+    ]
+  })
 }
 
 # Instance profile
